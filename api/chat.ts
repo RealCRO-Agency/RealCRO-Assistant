@@ -1,27 +1,32 @@
 export const config = {
-  runtime: "edge",
+  runtime: "edge"
 };
 
-export default async function handler(req: Request): Promise<Response> {
-  try {
-    const { message } = await req.json();
+export default async function handler(req: Request) {
+  const { messages } = await req.json();
 
-    if (!message) {
-      return new Response(JSON.stringify({ error: "Message is required" }), {
-        status: 400,
-        headers: { "Content-Type": "application/json" },
-      });
-    }
+  const apiKey = process.env.OPENAI_API_KEY || '';
 
-    // Example reply, replace with actual logic later
-    return new Response(JSON.stringify({ reply: `You said: ${message}` }), {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
-    });
-  } catch {
-    return new Response(JSON.stringify({ error: "Invalid request" }), {
-      status: 400,
-      headers: { "Content-Type": "application/json" },
-    });
+  if (!apiKey) {
+    return new Response(JSON.stringify({ error: "API key not set." }), { status: 500 });
   }
+
+  const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`
+    },
+    body: JSON.stringify({
+      model: "gpt-4",
+      messages,
+      temperature: 0.7,
+      stream: false
+    })
+  });
+
+  const data = await response.json();
+  return new Response(JSON.stringify(data), {
+    headers: { "Content-Type": "application/json" }
+  });
 }
