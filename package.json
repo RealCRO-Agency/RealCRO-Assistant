@@ -1,7 +1,8 @@
 {
   "name": "realcro-assistant",
   "version": "1.0.0",
-  "scripts": {},
-  "dependencies": {},
-  "devDependencies": {}
+  "private": true,
+  "scripts": {
+    "dev": "vercel dev"
+  }
 }
