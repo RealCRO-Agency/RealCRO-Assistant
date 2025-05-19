@@ -1,33 +1,49 @@
-// /api/chat.ts
-import { VercelRequest, VercelResponse } from '@vercel/node';
-import { Configuration, OpenAIApi } from 'openai';
+// /api/chat.ts (Edge Runtime Version)
 
-const configuration = new Configuration({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-const openai = new OpenAIApi(configuration);
+export const config = {
+  runtime: 'edge',
+};
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (req.method !== 'POST') {
-    return res.status(405).send('Only POST requests are allowed');
-  }
+export default async function handler(req: Request): Promise<Response> {
+  const apiKey = process.env.OPENAI_API_KEY;
 
-  const { message } = req.body;
-
-  if (!message) {
-    return res.status(400).json({ error: 'Message is required' });
+  if (!apiKey) {
+    return new Response("Missing OPENAI_API_KEY", { status: 500 });
   }
 
   try {
-    const response = await openai.createChatCompletion({
-      model: 'gpt-4',
-      messages: [{ role: 'user', content: message }],
+    const body = await req.json();
+    const userMessage = body.message;
+
+    if (!userMessage) {
+      return new Response(JSON.stringify({ error: "Message is required" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    const openaiRes = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "gpt-3.5-turbo", // or "gpt-4" if your key allows
+        messages: [{ role: "user", content: userMessage }],
+      }),
     });
 
-    const reply = response.data.choices[0].message?.content;
-    res.status(200).json({ reply });
+    const data = await openaiRes.json();
+
+    return new Response(JSON.stringify({ reply: data.choices?.[0]?.message?.content || "No response." }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Something went wrong' });
+    return new Response(JSON.stringify({ error: "Something went wrong" }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 }
