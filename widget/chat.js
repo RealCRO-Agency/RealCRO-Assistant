@@ -25,7 +25,7 @@
   container.id = "gpt-widget";
 
   const iframe = document.createElement("iframe");
-  iframe.src = "https://YOUR-VERCEL-APP.vercel.app"; // replace after deployment
+  iframe.src = "https://realcro-assistant.vercel.app";
   container.appendChild(iframe);
 
   document.body.appendChild(container);
