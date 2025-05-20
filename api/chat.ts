@@ -1,33 +1,21 @@
-export const config = {
-  runtime: "edge"
-};
+import { VercelRequest, VercelResponse } from '@vercel/node';
+import OpenAI from 'openai';
 
-export default async function handler(req: Request) {
-  const body = await req.json();
-  const messages = body.messages;
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY
+});
 
-  const apiKey = process.env.OPENAI_API_KEY;
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  try {
+    const body = req.body;
 
-  if (!apiKey) {
-    return new Response("Missing OpenAI API Key", { status: 500 });
+    const chat = await openai.chat.completions.create({
+      model: 'gpt-4',
+      messages: body.messages
+    });
+
+    res.status(200).json(chat);
+  } catch (err) {
+    res.status(500).json({ error: 'Error generating chat response' });
   }
-
-  const openaiRes = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`
-    },
-    body: JSON.stringify({
-      model: "gpt-4",
-      messages: messages,
-      temperature: 0.7
-    })
-  });
-
-  const data = await openaiRes.json();
-
-  return new Response(JSON.stringify(data), {
-    headers: { "Content-Type": "application/json" }
-  });
 }
