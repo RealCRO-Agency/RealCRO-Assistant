@@ -1,4 +1,12 @@
 {
+  "type": "module",
+  "dependencies": {
+    "openai": "^4.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "@types/node": "^20.0.0"
+  
   "version": 2,
   "functions": {
     "api/chat.ts": {
