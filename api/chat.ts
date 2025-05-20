@@ -1,21 +1,26 @@
-import { VercelRequest, VercelResponse } from '@vercel/node';
+import { NextApiRequest, NextApiResponse } from 'next';
 import OpenAI from 'openai';
 
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
+  apiKey: process.env.OPENAI_API_KEY,
 });
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  try {
-    const body = req.body;
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  if (req.method !== 'POST') {
+    res.status(405).json({ error: 'Only POST requests allowed' });
+    return;
+  }
 
-    const chat = await openai.chat.completions.create({
+  const { message } = req.body;
+
+  try {
+    const completion = await openai.chat.completions.create({
+      messages: [{ role: 'user', content: message }],
       model: 'gpt-4',
-      messages: body.messages
     });
 
-    res.status(200).json(chat);
-  } catch (err) {
-    res.status(500).json({ error: 'Error generating chat response' });
+    res.status(200).json({ reply: completion.choices[0].message.content });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message || 'Something went wrong' });
   }
 }
